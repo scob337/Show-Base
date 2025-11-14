@@ -58,7 +58,21 @@ export default function ProfilePage() {
   const [reviewData, setReviewData] = useState({ rating: 5, text: "" })
 
   useEffect(() => {
-    const allProfiles = JSON.parse(localStorage.getItem("portfolioProfiles") || "[]")
+    const getCookie = (name: string): string | null => {
+      if (typeof document === "undefined") return null
+      const nameEQ = name + "="
+      const ca = document.cookie.split(";")
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i].trim()
+        if (c.indexOf(nameEQ) === 0) {
+          return decodeURIComponent(c.substring(nameEQ.length))
+        }
+      }
+      return null
+    }
+
+    const allProfilesCookie = getCookie("portfolioProfiles")
+    const allProfiles = allProfilesCookie ? JSON.parse(allProfilesCookie) : []
     const foundProvider = allProfiles.find((p: User) => p.id === providerId)
 
     if (!foundProvider) {
@@ -68,7 +82,8 @@ export default function ProfilePage() {
 
     setProvider(foundProvider)
 
-    const allProjects = JSON.parse(localStorage.getItem("portfolioProjects") || "[]")
+    const allProjectsCookie = getCookie("portfolioProjects")
+    const allProjects = allProjectsCookie ? JSON.parse(allProjectsCookie) : []
     const providerProjects = allProjects.filter((p: Project) => p.userId === providerId)
     setProjects(providerProjects)
 
@@ -77,11 +92,51 @@ export default function ProfilePage() {
     setIsLoading(false)
   }, [providerId, router, getProviderReviews])
 
+  const handleContactProvider = () => {
+    if (!user || !provider) return
+
+    // منع الـ Provider من إرسال رسالة لـ Provider آخر
+    if (user.userType === "provider" && provider.userType === "provider") {
+      alert("Providers can only contact seekers")
+      return
+    }
+
+    // لا يمكنك إرسال رسالة لنفسك
+    if (user.id === provider.id) {
+      alert("You cannot message yourself")
+      return
+    }
+
+    // بدء محادثة وذهاب للمحادثات
+    router.push("/dashboard/messages")
+  }
+
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !provider || !reviewData.text.trim()) return
 
-    const allReviews = JSON.parse(localStorage.getItem("portfolioReviews") || "[]")
+    const getCookie = (name: string): string | null => {
+      if (typeof document === "undefined") return null
+      const nameEQ = name + "="
+      const ca = document.cookie.split(";")
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i].trim()
+        if (c.indexOf(nameEQ) === 0) {
+          return decodeURIComponent(c.substring(nameEQ.length))
+        }
+      }
+      return null
+    }
+
+    const setCookie = (name: string, value: string, days = 7) => {
+      if (typeof document === "undefined") return
+      const expires = new Date()
+      expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
+      document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`
+    }
+
+    const allReviewsCookie = getCookie("portfolioReviews")
+    const allReviews = allReviewsCookie ? JSON.parse(allReviewsCookie) : []
     const newReview: Review = {
       id: Date.now().toString(),
       providerId: provider.id,
@@ -93,7 +148,7 @@ export default function ProfilePage() {
     }
 
     allReviews.push(newReview)
-    localStorage.setItem("portfolioReviews", JSON.stringify(allReviews))
+    setCookie("portfolioReviews", JSON.stringify(allReviews), 7)
 
     setProviderReviews([...providerReviews, newReview])
     setReviewData({ rating: 5, text: "" })
@@ -119,29 +174,6 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b border-border sticky top-0 bg-background/95 backdrop-blur">
-        <div className="container flex items-center justify-between h-16">
-          <Link href="/" className="text-2xl font-bold text-primary">
-            PortfolioHub
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/browse" className="text-foreground hover:text-primary transition-colors">
-              Browse
-            </Link>
-            {user ? (
-              <Link href="/dashboard">
-                <Button className="bg-primary hover:bg-primary-light">Dashboard</Button>
-              </Link>
-            ) : (
-              <Link href="/auth/login" className="text-foreground hover:text-primary transition-colors font-medium">
-                  Login
-                </Link>
-            )}
-          </div>
-        </div>
-      </nav>
-
       {/* Profile Header */}
       <section className="bg-neutral-50 border-b border-border py-12">
         <div className="container">
@@ -162,11 +194,30 @@ export default function ProfilePage() {
                   <span className="text-neutral-600">({providerReviews.length} reviews)</span>
                 </div>
               </div>
-              <div className="flex gap-4">
-                <Button className="bg-primary hover:bg-primary-light">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Send Message
-                </Button>
+              <div className="flex gap-4 flex-col sm:flex-row">
+                {user ? (
+                  user.userType === "provider" && provider.userType === "provider" ? (
+                    <Button className="bg-gray-400 cursor-not-allowed" disabled>
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Providers Cannot Message Providers
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleContactProvider}
+                      className="bg-primary hover:bg-primary-light"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Send Message
+                    </Button>
+                  )
+                ) : (
+                  <Link href="/auth/login" className="w-full sm:w-auto">
+                    <Button className="w-full sm:w-auto bg-primary hover:bg-primary-light">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Login to Contact
+                    </Button>
+                  </Link>
+                )}
                 <Button variant="outline" className="bg-transparent">
                   <Mail className="w-4 h-4 mr-2" />
                   Contact

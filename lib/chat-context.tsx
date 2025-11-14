@@ -33,6 +33,27 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
+// Helper functions for cookies
+const setCookie = (name: string, value: string, days = 7) => {
+  if (typeof document === "undefined") return
+  const expires = new Date()
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`
+}
+
+const getCookie = (name: string): string | null => {
+  if (typeof document === "undefined") return null
+  const nameEQ = name + "="
+  const ca = document.cookie.split(";")
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i].trim()
+    if (c.indexOf(nameEQ) === 0) {
+      return decodeURIComponent(c.substring(nameEQ.length))
+    }
+  }
+  return null
+}
+
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null)
@@ -49,16 +70,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         timestamp: new Date().toISOString(),
       }
 
-      const allMessages = JSON.parse(localStorage.getItem("portfolioMessages") || "[]")
+      const allMessagesCookie = getCookie("portfolioMessages")
+      const allMessages = allMessagesCookie ? JSON.parse(allMessagesCookie) : []
       allMessages.push(newMessage)
-      localStorage.setItem("portfolioMessages", JSON.stringify(allMessages))
+      setCookie("portfolioMessages", JSON.stringify(allMessages), 7)
 
-      const allConversations = JSON.parse(localStorage.getItem("portfolioConversations") || "[]")
+      const allConversationsCookie = getCookie("portfolioConversations")
+      const allConversations = allConversationsCookie ? JSON.parse(allConversationsCookie) : []
       const convIndex = allConversations.findIndex((c: Conversation) => c.id === conversationId)
       if (convIndex !== -1) {
         allConversations[convIndex].lastMessage = text
         allConversations[convIndex].lastMessageTime = newMessage.timestamp
-        localStorage.setItem("portfolioConversations", JSON.stringify(allConversations))
+        setCookie("portfolioConversations", JSON.stringify(allConversations), 7)
       }
 
       setMessages((prev) => [...prev, newMessage])
@@ -68,7 +91,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const startConversation = useCallback(
     (userId1: string, user1Name: string, userId2: string, user2Name: string): string => {
-      const allConversations = JSON.parse(localStorage.getItem("portfolioConversations") || "[]")
+      const allConversationsCookie = getCookie("portfolioConversations")
+      const allConversations = allConversationsCookie ? JSON.parse(allConversationsCookie) : []
 
       const existingConv = allConversations.find(
         (c: Conversation) =>
@@ -91,7 +115,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
 
       allConversations.push(newConversation)
-      localStorage.setItem("portfolioConversations", JSON.stringify(allConversations))
+      setCookie("portfolioConversations", JSON.stringify(allConversations), 7)
 
       return newConversation.id
     },
@@ -99,17 +123,20 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   )
 
   const loadConversation = useCallback((conversationId: string) => {
-    const allConversations = JSON.parse(localStorage.getItem("portfolioConversations") || "[]")
+    const allConversationsCookie = getCookie("portfolioConversations")
+    const allConversations = allConversationsCookie ? JSON.parse(allConversationsCookie) : []
     const conv = allConversations.find((c: Conversation) => c.id === conversationId)
     setCurrentConversation(conv || null)
 
-    const allMessages = JSON.parse(localStorage.getItem("portfolioMessages") || "[]")
+    const allMessagesCookie = getCookie("portfolioMessages")
+    const allMessages = allMessagesCookie ? JSON.parse(allMessagesCookie) : []
     const convMessages = allMessages.filter((m: Message) => m.conversationId === conversationId)
     setMessages(convMessages)
   }, [])
 
   const loadUserConversations = useCallback((userId: string) => {
-    const allConversations = JSON.parse(localStorage.getItem("portfolioConversations") || "[]")
+    const allConversationsCookie = getCookie("portfolioConversations")
+    const allConversations = allConversationsCookie ? JSON.parse(allConversationsCookie) : []
     const userConversations = allConversations.filter((c: Conversation) => c.participants.includes(userId))
     setConversations(userConversations)
   }, [])

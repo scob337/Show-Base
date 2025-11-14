@@ -22,6 +22,27 @@ interface ReviewContextType {
 
 const ReviewContext = createContext<ReviewContextType | undefined>(undefined)
 
+// Helper functions for cookies
+const setCookie = (name: string, value: string, days = 7) => {
+  if (typeof document === "undefined") return
+  const expires = new Date()
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`
+}
+
+const getCookie = (name: string): string | null => {
+  if (typeof document === "undefined") return null
+  const nameEQ = name + "="
+  const ca = document.cookie.split(";")
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i].trim()
+    if (c.indexOf(nameEQ) === 0) {
+      return decodeURIComponent(c.substring(nameEQ.length))
+    }
+  }
+  return null
+}
+
 export function ReviewProvider({ children }: { children: React.ReactNode }) {
   const [reviews, setReviews] = useState<Review[]>([])
 
@@ -36,15 +57,17 @@ export function ReviewProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
     }
 
-    const allReviews = JSON.parse(localStorage.getItem("portfolioReviews") || "[]")
+    const allReviewsCookie = getCookie("portfolioReviews")
+    const allReviews = allReviewsCookie ? JSON.parse(allReviewsCookie) : []
     allReviews.push(newReview)
-    localStorage.setItem("portfolioReviews", JSON.stringify(allReviews))
+    setCookie("portfolioReviews", JSON.stringify(allReviews), 7)
 
     setReviews([...reviews, newReview])
   }
 
   const getProviderReviews = (providerId: string): Review[] => {
-    const allReviews = JSON.parse(localStorage.getItem("portfolioReviews") || "[]")
+    const allReviewsCookie = getCookie("portfolioReviews")
+    const allReviews = allReviewsCookie ? JSON.parse(allReviewsCookie) : []
     return allReviews.filter((r: Review) => r.providerId === providerId)
   }
 

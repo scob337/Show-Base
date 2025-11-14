@@ -26,27 +26,55 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Helper functions for cookies
+const setCookie = (name: string, value: string, days = 7) => {
+  if (typeof document === "undefined") return
+  const expires = new Date()
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`
+}
+
+const getCookie = (name: string): string | null => {
+  if (typeof document === "undefined") return null
+  const nameEQ = name + "="
+  const ca = document.cookie.split(";")
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i].trim()
+    if (c.indexOf(nameEQ) === 0) {
+      return decodeURIComponent(c.substring(nameEQ.length))
+    }
+  }
+  return null
+}
+
+const removeCookie = (name: string) => {
+  if (typeof document === "undefined") return
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Load user from localStorage on mount
+  // Load user from cookies on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem("portfolioUser")
-    if (storedUser) {
+    const storedUserCookie = getCookie("portfolioUser")
+    if (storedUserCookie) {
       try {
-        setUser(JSON.parse(storedUser))
+        setUser(JSON.parse(storedUserCookie))
       } catch (error) {
-        console.error("Failed to parse stored user:", error)
-        localStorage.removeItem("portfolioUser")
+        console.error("Failed to parse user cookie:", error)
+        removeCookie("portfolioUser")
       }
     }
     setIsLoading(false)
   }, [])
 
   const register = async (name: string, email: string, password: string, userType: "provider" | "seeker") => {
-    // Check if user already exists
-    const users = JSON.parse(localStorage.getItem("portfolioUsers") || "[]")
+    // Check if user already exists in cookie storage
+    const usersCookie = getCookie("portfolioUsers")
+    const users = usersCookie ? JSON.parse(usersCookie) : []
+    
     if (users.some((u: any) => u.email === email)) {
       throw new Error("Email already registered")
     }
@@ -60,41 +88,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
     }
 
-    // Store user credentials
+    // Store user credentials in cookie
     users.push({ email, password })
-    localStorage.setItem("portfolioUsers", JSON.stringify(users))
+    setCookie("portfolioUsers", JSON.stringify(users), 7)
 
-    const allProfiles = JSON.parse(localStorage.getItem("portfolioProfiles") || "[]")
+    const allProfilesCookie = getCookie("portfolioProfiles")
+    const allProfiles = allProfilesCookie ? JSON.parse(allProfilesCookie) : []
     allProfiles.push(newUser)
-    localStorage.setItem("portfolioProfiles", JSON.stringify(allProfiles))
+    setCookie("portfolioProfiles", JSON.stringify(allProfiles), 7)
 
-    // Set current user
-    localStorage.setItem("portfolioUser", JSON.stringify(newUser))
+    // Set current user in cookie
+    const userString = JSON.stringify(newUser)
+    setCookie("portfolioUser", userString, 7)
     setUser(newUser)
   }
 
   const login = async (email: string, password: string) => {
-    const users = JSON.parse(localStorage.getItem("portfolioUsers") || "[]")
+    const usersCookie = getCookie("portfolioUsers")
+    const users = usersCookie ? JSON.parse(usersCookie) : []
     const userCredentials = users.find((u: any) => u.email === email)
 
     if (!userCredentials || userCredentials.password !== password) {
       throw new Error("Invalid email or password")
     }
 
-    // Find user profile
-    const allProfiles = JSON.parse(localStorage.getItem("portfolioProfiles") || "[]")
+    // Find user profile from cookie
+    const allProfilesCookie = getCookie("portfolioProfiles")
+    const allProfiles = allProfilesCookie ? JSON.parse(allProfilesCookie) : []
     const userProfile = allProfiles.find((p: any) => p.email === email)
 
     if (!userProfile) {
       throw new Error("User profile not found")
     }
 
-    localStorage.setItem("portfolioUser", JSON.stringify(userProfile))
+    const userString = JSON.stringify(userProfile)
+    setCookie("portfolioUser", userString, 7)
     setUser(userProfile)
   }
 
   const logout = () => {
-    localStorage.removeItem("portfolioUser")
+    removeCookie("portfolioUser")
+    removeCookie("portfolioUsers")
+    removeCookie("portfolioProfiles")
     setUser(null)
   }
 
@@ -102,13 +137,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) throw new Error("No user logged in")
 
     const updatedUser = { ...user, ...updates }
-    localStorage.setItem("portfolioUser", JSON.stringify(updatedUser))
+    const userString = JSON.stringify(updatedUser)
+    setCookie("portfolioUser", userString, 7)
 
-    const allProfiles = JSON.parse(localStorage.getItem("portfolioProfiles") || "[]")
+    const allProfilesCookie = getCookie("portfolioProfiles")
+    const allProfiles = allProfilesCookie ? JSON.parse(allProfilesCookie) : []
     const index = allProfiles.findIndex((p: any) => p.id === user.id)
     if (index !== -1) {
       allProfiles[index] = updatedUser
-      localStorage.setItem("portfolioProfiles", JSON.stringify(allProfiles))
+      setCookie("portfolioProfiles", JSON.stringify(allProfiles), 7)
     }
 
     setUser(updatedUser)

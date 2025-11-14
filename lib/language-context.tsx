@@ -12,12 +12,33 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
+// Helper functions for cookies
+const setCookie = (name: string, value: string, days = 7) => {
+  if (typeof document === "undefined") return
+  const expires = new Date()
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`
+}
+
+const getCookie = (name: string): string | null => {
+  if (typeof document === "undefined") return null
+  const nameEQ = name + "="
+  const ca = document.cookie.split(";")
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i].trim()
+    if (c.indexOf(nameEQ) === 0) {
+      return decodeURIComponent(c.substring(nameEQ.length))
+    }
+  }
+  return null
+}
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("ar")
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem("language") as Language | null
+    const saved = getCookie("language") as Language | null
     if (saved) {
       setLanguageState(saved)
     }
@@ -26,7 +47,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang)
-    localStorage.setItem("language", lang)
+    setCookie("language", lang, 7)
     document.documentElement.lang = lang
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr"
   }

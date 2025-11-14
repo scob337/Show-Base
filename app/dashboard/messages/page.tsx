@@ -2,14 +2,15 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/lib/auth-context"
 import { useChat } from "@/lib/chat-context"
-import { Send, MessageCircle } from "lucide-react"
+import { Send, MessageCircle, Phone, Video, X } from "lucide-react"
+import CallInterface from "@/components/call-interface"
 
 interface Conversation {
   id: string
@@ -38,6 +39,9 @@ export default function MessagesPage() {
   const [messageText, setMessageText] = useState("")
   const [localConversations, setLocalConversations] = useState<Conversation[]>([])
   const [localMessages, setLocalMessages] = useState<Message[]>([])
+  const [activeCall, setActiveCall] = useState<string | null>(null)
+  const [notification, setNotification] = useState<{ message: string; type: "success" | "info" } | null>(null)
+  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -49,6 +53,40 @@ export default function MessagesPage() {
       setLocalConversations(userConversations)
     }
   }, [user, isLoading, router, loadUserConversations])
+
+  // Poll for new messages every 2 seconds for real-time effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (selectedConversation && user) {
+        const allMessages = JSON.parse(localStorage.getItem("portfolioMessages") || "[]")
+        const convMessages = allMessages.filter((m: Message) => m.conversationId === selectedConversation.id)
+        
+        // Check if there are new messages
+        if (convMessages.length > localMessages.length) {
+          const newMessages = convMessages.slice(localMessages.length)
+          newMessages.forEach((msg: Message) => {
+            if (msg.senderId !== user.id) {
+              showNotification(`New message from ${msg.senderName}`, "info")
+            }
+          })
+        }
+        
+        setLocalMessages(convMessages)
+      }
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [selectedConversation, localMessages, user])
+
+  const showNotification = (message: string, type: "success" | "info") => {
+    setNotification({ message, type })
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current)
+    }
+    notificationTimeoutRef.current = setTimeout(() => {
+      setNotification(null)
+    }, 3000)
+  }
 
   useEffect(() => {
     if (selectedConversation) {
@@ -65,6 +103,7 @@ export default function MessagesPage() {
 
     sendMessage(selectedConversation.id, user.id, user.name, messageText)
     setMessageText("")
+    showNotification("Message sent successfully", "success")
 
     const allMessages = JSON.parse(localStorage.getItem("portfolioMessages") || "[]")
     const convMessages = allMessages.filter((m: Message) => m.conversationId === selectedConversation.id)
@@ -82,18 +121,25 @@ export default function MessagesPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <nav className="border-b border-border sticky top-0 bg-background/95 backdrop-blur">
-        <div className="container flex items-center justify-between h-16">
-          <Link href="/" className="text-2xl font-bold text-primary">
-            PortfolioHub
-          </Link>
-          <Link href="/dashboard">
-            <Button variant="outline" className="bg-transparent">
-              Back to Dashboard
-            </Button>
-          </Link>
+      {/* Notification */}
+      {notification && (
+        <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-40 ${
+          notification.type === "success" 
+            ? "bg-green-500 text-white" 
+            : "bg-blue-500 text-white"
+        }`}>
+          {notification.message}
         </div>
-      </nav>
+      )}
+
+      {/* Call Interface */}
+      {activeCall && selectedConversation && (
+        <CallInterface
+          conversationId={activeCall}
+          otherUserName={getOtherParticipantName(selectedConversation)}
+          onCallEnd={() => setActiveCall(null)}
+        />
+      )}
 
       <div className="container py-12">
         <div className="max-w-6xl">
@@ -107,7 +153,7 @@ export default function MessagesPage() {
               </div>
               <div className="flex-1 overflow-y-auto">
                 {localConversations.length === 0 ? (
-                  <div className="p-4 text-center text-neutral-600">
+                  <div className="p-4 text-center text-muted-foreground">
                     <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No conversations yet</p>
                   </div>
@@ -116,12 +162,12 @@ export default function MessagesPage() {
                     <button
                       key={conv.id}
                       onClick={() => setSelectedConversation(conv)}
-                      className={`w-full p-4 border-b border-border text-left hover:bg-neutral-50 transition-colors ${
-                        selectedConversation?.id === conv.id ? "bg-neutral-100" : ""
+                      className={`w-full p-4 border-b border-border text-left hover:bg-card/50 transition-colors ${
+                        selectedConversation?.id === conv.id ? "bg-card" : ""
                       }`}
                     >
-                      <p className="font-medium text-sm">{getOtherParticipantName(conv)}</p>
-                      <p className="text-xs text-neutral-600 truncate">{conv.lastMessage || "No messages yet"}</p>
+                      <p className="font-medium text-sm text-foreground">{getOtherParticipantName(conv)}</p>
+                      <p className="text-xs text-muted-foreground truncate">{conv.lastMessage || "No messages yet"}</p>
                     </button>
                   ))
                 )}
@@ -129,16 +175,34 @@ export default function MessagesPage() {
             </div>
 
             {/* Chat Area */}
-            <div className="md:col-span-2 border border-border rounded-lg overflow-hidden flex flex-col">
+            <div className="md:col-span-2 border border-border rounded-lg overflow-hidden flex flex-col bg-background">
               {selectedConversation ? (
                 <>
-                  <div className="p-4 border-b border-border">
+                  <div className="p-4 border-b border-border flex items-center justify-between">
                     <h2 className="font-semibold">{getOtherParticipantName(selectedConversation)}</h2>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setActiveCall(selectedConversation.id)}
+                        className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
+                        size="sm"
+                      >
+                        <Phone className="w-4 h-4" />
+                        Audio
+                      </Button>
+                      <Button
+                        onClick={() => setActiveCall(selectedConversation.id)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-2"
+                        size="sm"
+                      >
+                        <Video className="w-4 h-4" />
+                        Video
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {localMessages.length === 0 ? (
-                      <div className="text-center text-neutral-600 py-8">
+                      <div className="text-center text-muted-foreground py-8">
                         <p className="text-sm">No messages yet. Start the conversation!</p>
                       </div>
                     ) : (
@@ -149,7 +213,9 @@ export default function MessagesPage() {
                         >
                           <div
                             className={`max-w-xs px-4 py-2 rounded-lg ${
-                              msg.senderId === user.id ? "bg-primary text-white" : "bg-neutral-100 text-foreground"
+                              msg.senderId === user.id 
+                                ? "bg-primary text-white" 
+                                : "bg-card dark:bg-muted text-foreground"
                             }`}
                           >
                             <p className="text-sm">{msg.text}</p>
@@ -179,8 +245,11 @@ export default function MessagesPage() {
                   </form>
                 </>
               ) : (
-                <div className="flex items-center justify-center h-full text-neutral-600">
-                  <p>Select a conversation to start messaging</p>
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  <div className="text-center">
+                    <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>Select a conversation to start messaging</p>
+                  </div>
                 </div>
               )}
             </div>

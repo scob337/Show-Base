@@ -257,19 +257,6 @@ export default function EditProjectPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <nav className="border-b border-border sticky top-0 bg-background/95 backdrop-blur">
-        <div className="container flex items-center justify-between h-16">
-          <Link href="/" className="text-2xl font-bold text-primary">
-            PortfolioHub
-          </Link>
-          <Link href="/dashboard/projects">
-            <Button variant="outline" className="bg-transparent">
-              Back to Projects
-            </Button>
-          </Link>
-        </div>
-      </nav>
-
       <div className="container py-12">
         <div className="max-w-2xl">
           <div className="mb-8">

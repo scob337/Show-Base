@@ -43,7 +43,21 @@ export default function ProjectDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const allProjects = JSON.parse(localStorage.getItem("portfolioProjects") || "[]")
+    const getCookie = (name: string): string | null => {
+      if (typeof document === "undefined") return null
+      const nameEQ = name + "="
+      const ca = document.cookie.split(";")
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i].trim()
+        if (c.indexOf(nameEQ) === 0) {
+          return decodeURIComponent(c.substring(nameEQ.length))
+        }
+      }
+      return null
+    }
+
+    const allProjectsCookie = getCookie("portfolioProjects")
+    const allProjects = allProjectsCookie ? JSON.parse(allProjectsCookie) : []
     const foundProject = allProjects.find((p: Project) => p.id === projectId)
 
     if (!foundProject) {
@@ -53,7 +67,8 @@ export default function ProjectDetailPage() {
 
     setProject(foundProject)
 
-    const allProfiles = JSON.parse(localStorage.getItem("portfolioProfiles") || "[]")
+    const allProfilesCookie = getCookie("portfolioProfiles")
+    const allProfiles = allProfilesCookie ? JSON.parse(allProfilesCookie) : []
     const foundProvider = allProfiles.find((p: User) => p.id === foundProject.userId)
     setProvider(foundProvider || null)
     setIsLoading(false)
@@ -61,6 +76,18 @@ export default function ProjectDetailPage() {
 
   const handleContactProvider = () => {
     if (!user || !provider) return
+
+    // منع الـ Provider من إرسال رسالة لـ Provider آخر
+    if (user.userType === "provider" && provider.userType === "provider") {
+      alert("Providers can only contact seekers")
+      return
+    }
+
+    // لا يمكنك إرسال رسالة لنفسك
+    if (user.id === provider.id) {
+      alert("You cannot message yourself")
+      return
+    }
 
     const conversationId = startConversation(user.id, user.name, provider.id, provider.name)
     router.push("/dashboard/messages")
@@ -83,43 +110,6 @@ export default function ProjectDetailPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <nav className="border-b border-border sticky top-0 bg-background/95 backdrop-blur z-50">
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="text-2xl font-bold text-primary hover:opacity-90 transition-opacity">
-              PortfolioHub
-            </Link>
-            <div className="hidden md:flex items-center space-x-4">
-              <Link href="/browse" className="text-foreground hover:text-primary transition-colors font-medium">
-                Browse
-              </Link>
-              {user && (
-                <Link href="/dashboard" className="text-foreground hover:text-primary transition-colors font-medium">
-                  Dashboard
-                </Link>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/browse">
-              <Button variant="outline" className="bg-transparent flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Back to Browse
-              </Button>
-            </Link>
-            {user && user.id !== provider.id && (
-              <Button 
-                onClick={handleContactProvider} 
-                className="bg-primary hover:bg-primary-light text-white flex items-center gap-2"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Contact Provider
-              </Button>
-            )}
-          </div>
-        </div>
-      </nav>
-
       <div className="container py-12">
         <div className="max-w-4xl">
           {/* Project Image */}
@@ -182,13 +172,20 @@ export default function ProjectDetailPage() {
                       </Button>
                     </Link>
                     {user ? (
-                      <Button
-                        onClick={handleContactProvider}
-                        className="w-full bg-primary hover:bg-primary-light flex items-center justify-center gap-2"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        Contact Provider
-                      </Button>
+                      user.userType === "provider" && provider.userType === "provider" ? (
+                        <Button className="w-full bg-gray-400 cursor-not-allowed" disabled>
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Providers Cannot Message Providers
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={handleContactProvider}
+                          className="w-full bg-primary hover:bg-primary-light flex items-center justify-center gap-2"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          Contact Provider
+                        </Button>
+                      )
                     ) : (
                       <Link href="/auth/login" className="w-full">
                         <Button className="w-full bg-primary hover:bg-primary-light flex items-center justify-center gap-2">

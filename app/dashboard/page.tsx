@@ -101,27 +101,6 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b border-border sticky top-0 bg-background/95 backdrop-blur">
-        <div className="container flex items-center justify-between h-16">
-          <Link href="/" className="text-2xl font-bold text-primary">
-            PortfolioHub
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-neutral-600">{profile.full_name}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="flex items-center gap-2 bg-transparent"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </nav>
-
       {/* Dashboard Content */}
       <div className="container py-12">
         <div className="max-w-4xl">

@@ -97,39 +97,6 @@ export default function ProjectsPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <nav className="border-b border-border sticky top-0 bg-background/95 backdrop-blur z-50">
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="text-2xl font-bold text-primary hover:opacity-90 transition-opacity">
-              PortfolioHub
-            </Link>
-            <div className="hidden md:flex items-center space-x-4">
-              <Link href="/dashboard" className="text-foreground hover:text-primary transition-colors font-medium">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/messages" className="text-foreground hover:text-primary transition-colors font-medium">
-                Messages
-              </Link>
-              <Link href="/dashboard/settings" className="text-foreground hover:text-primary transition-colors font-medium">
-                Settings
-              </Link>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard">
-              <Button variant="outline" className="bg-transparent">
-                Back to Dashboard
-              </Button>
-            </Link>
-            <Link href="/dashboard/projects/new">
-              <Button className="bg-primary hover:bg-primary-light text-white">
-                <Plus className="w-4 h-4 mr-2" /> New Project
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
-
       <div className="container py-12">
         <div className="max-w-4xl">
           <div className="flex items-center justify-between mb-8">

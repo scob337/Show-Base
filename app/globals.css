@@ -40,41 +40,51 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.55 0.2 250);
+  /* Footer colors for light mode: light background with dark text */
+  --footer-bg: oklch(0.974 0 0); /* very light gray background */
+  --footer-foreground: oklch(0.145 0 0); /* dark text */
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  /* Dark mode palette (user requested):
+     primary background: #15202E
+     secondary background / surfaces: #1A263D
+     text / headings: #FFFFFF (only for text, not backgrounds) */
+  --background: #15202E;
+  --foreground: #FFFFFF;
+  --card: #1A263D;
+  --card-foreground: #FFFFFF;
+  --popover: #1A263D;
+  --popover-foreground: #FFFFFF;
+  --primary: #00B4B3;
+  --primary-foreground: #FFFFFF;
+  --secondary: #0ea5e9;
+  --secondary-foreground: #FFFFFF;
+  --muted: #20323A;
+  --muted-foreground: #9fb3b4;
+  --accent: #00B4B3;
+  --accent-foreground: #FFFFFF;
+  --destructive: #ef4444;
+  --destructive-foreground: #FFFFFF;
+  --border: rgba(255,255,255,0.06);
+  --input: rgba(255,255,255,0.04);
+  --ring: #00B4B3;
+  --chart-1: #00B4B3;
+  --chart-2: #38bdf8;
+  --chart-3: #10b981;
+  --chart-4: #8b5cf6;
+  --chart-5: #f59e0b;
+  --sidebar: #1A263D; /* secondary for side surfaces */
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #00B4B3;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #00B4B3;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255,255,255,0.04);
+  --sidebar-ring: #00B4B3;
+  /* Footer: use dark palette colors same as rest of dark mode */
+  --footer-bg: #15202E; /* primary dark background like the rest */
+  --footer-foreground: #FFFFFF; /* white text like rest of dark mode */
 }
 
 @theme inline {
@@ -165,12 +175,35 @@
   }
 
   .btn-secondary {
-    @apply bg-neutral-100 text-foreground px-6 py-2 rounded-lg font-medium hover:bg-neutral-200 transition-colors;
+    /* Use semantic variables so this adapts to light/dark automatically */
+    background-color: var(--color-muted, var(--color-neutral-100));
+    color: var(--color-foreground);
+    padding: 0.5rem 1.5rem; /* px-6 py-2 */
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.18s ease, color 0.18s ease;
+  }
+  .btn-secondary:hover {
+    background-color: color-mix(in srgb, var(--color-muted) 75%, var(--color-card) 25%);
   }
 
   .card-project {
-    @apply bg-white border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow;
+    background-color: var(--color-card, var(--card));
+    color: var(--color-card-foreground, var(--card-foreground));
+    border: 1px solid var(--color-border, var(--border));
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: box-shadow 0.18s ease, transform 0.12s ease;
+    /* preserve the look & spacing */
   }
+  .card-project:hover {
+    box-shadow: 0 10px 30px rgba(2,6,23,0.35);
+    transform: translateY(-3px);
+  }
+
+  /* small helpers so we can use semantic footer styles in markup */
+  .bg-footer { background-color: var(--footer-bg); }
+  .text-footer { color: var(--footer-foreground); }
 
   .text-balance {
     text-wrap: balance;

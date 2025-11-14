@@ -1,11 +1,15 @@
 'use client'
 
-import * as React from 'react'
 import {
   ThemeProvider as NextThemesProvider,
   type ThemeProviderProps,
 } from 'next-themes'
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+  // default to class strategy so dark mode toggles by adding `dark` class to <html>
+  return (
+    <NextThemesProvider attribute="class" enableSystem={true} {...props}>
+      {children}
+    </NextThemesProvider>
+  )
 }

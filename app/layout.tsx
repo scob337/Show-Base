@@ -1,10 +1,13 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import "./globals.css"
 import { AuthProvider } from "@/lib/auth-context"
 import { ChatProvider } from "@/lib/chat-context"
 import { ReviewProvider } from "@/lib/review-context"
+import { ThemeProvider } from '@/components/theme-provider'
+import Navbar from '@/components/navbar'
+import Footer from '@/components/footer'
+import "./globals.css"
 
 const geistSans = Geist({ subsets: ["latin"] })
 const geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -23,11 +26,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.className} bg-background text-foreground`} suppressHydrationWarning>
-        <AuthProvider>
-          <ChatProvider>
-            <ReviewProvider>{children}</ReviewProvider>
-          </ChatProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ChatProvider>
+              <Navbar />
+              <ReviewProvider>{children}</ReviewProvider>
+              <Footer />
+            </ChatProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -24,7 +24,7 @@
 
 ## Project metadata (from package.json)
 
-- Name: `Show-Base`
+- Name: `portfolio-hub`
 - Version: `0.1.0`
 - Key dependencies: `next@16`, `react@19`, `@supabase/ssr`, `@supabase/supabase-js`, `tailwindcss@^4`, and several Radix UI packages and UI utilities.
 - Dev dependencies: `typescript@^5`, `tailwindcss`, `postcss`, `@types/*`.

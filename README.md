@@ -36,14 +36,14 @@ This project requires Supabase credentials in environment variables. Create a `.
 Example `.env.local` (values are placeholders):
 
 ```powershell
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-public-key
 # Optional (server-only) service role key if you run server-side tasks that need elevated privileges
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
 Notes:
-- Client-side code (browser) uses `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (see `lib/supabase/client.ts`).
+- Client-side code (browser) uses `SUPABASE_URL` and `SUPABASE_ANON_KEY` (see `lib/supabase/client.ts`).
 - Server components and API routes use the server client wrapper which also expects the same public variables for initialization (see `lib/supabase/server.ts`) and may also use cookie helpers.
 - Keep the service role key secret and only set it in server environments (CI, Vercel Environment Variables, etc.).
 
@@ -82,7 +82,7 @@ When deploying to Vercel (recommended for Next.js), set the same environment var
 ## Supabase setup
 
 1. Create a Supabase project at https://app.supabase.com/
-2. Copy the Project URL and Anon Key into your `.env.local` as `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+2. Copy the Project URL and Anon Key into your `.env.local` as `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
 3. If you need to run the example SQL that ships with the repo, use the SQL editor in Supabase and run `scripts/01-create-tables.sql` and `scripts/02-reset-and-add-services.sql`.
 4. Review Row Level Security (RLS) policies for your tables. The app may expect certain policies to be in place for secure read/write access.
 
@@ -91,12 +91,12 @@ When deploying to Vercel (recommended for Next.js), set the same environment var
 - Root layout (`app/layout.tsx`) wraps the app with `AuthProvider`, `ChatProvider`, and `ReviewProvider` context providers.
 - UI primitives live under `components/ui/` and follow a Radix + Tailwind approach.
 - Supabase clients:
-  - `lib/supabase/client.ts` creates a browser client using `@supabase/ssr` helper `createBrowserClient` and reads from `NEXT_PUBLIC_*` envs.
+  - `lib/supabase/client.ts` creates a browser client using `@supabase/ssr` helper `createBrowserClient` and reads from `*` envs.
   - `lib/supabase/server.ts` creates a server client using cookies integration for server components/routes.
 
 ## Common troubleshooting
 
-- App fails to fetch from Supabase: double-check `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` and in your deployment provider.
+- App fails to fetch from Supabase: double-check `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env.local` and in your deployment provider.
 - TypeScript build errors: `next.config.mjs` currently sets `typescript.ignoreBuildErrors: true` so builds may succeed despite TS errors — consider enabling strict builds for production.
 - Port in use: change `PORT` env var or specify `pnpm dev -- -p 3001` to change the dev port.
 
